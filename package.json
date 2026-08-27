@@ -1,0 +1,53 @@
+{
+  "name": "@cosmosapp/app_bridge",
+  "version": "0.1.0",
+  "description": "The postMessage bridge between a Cosmos App and the platform that embeds it. Origin-checked in both directions, both ends in one package, zero dependencies.",
+  "keywords": [
+    "cosmos",
+    "cosmos-app",
+    "postmessage",
+    "iframe",
+    "bridge",
+    "embedded-apps",
+    "typescript"
+  ],
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "Cosmos Pay",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CosmosPay/cosmos-app-bridge.git"
+  },
+  "bugs": {
+    "url": "https://github.com/CosmosPay/cosmos-app-bridge/issues"
+  },
+  "homepage": "https://github.com/CosmosPay/cosmos-app-bridge#readme",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+      "require": { "types": "./dist/index.d.cts", "default": "./dist/index.cjs" }
+    }
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "pretest": "npm run build",
+    "test": "node --test test/bridge.test.mjs",
+    "test:watch": "node --test --watch test/bridge.test.mjs",
+    "prepublishOnly": "npm run build",
+    "clean": "rimraf dist"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "rimraf": "^6.1.3",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  },
+  "engines": { "node": ">=18" }
+}
