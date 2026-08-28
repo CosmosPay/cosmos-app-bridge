@@ -131,3 +131,16 @@ afirmación de que nunca se usa un comodín se comprueba en vez de prometerse.
 ## Licencia
 
 Ver `LICENSE`.
+
+## Por qué este paquete es MIT
+
+El resto de Cosmos es source-available. Este no, y la razón es que no es el
+negocio: el negocio son los pagos, Stellar y la red de comerciantes. Un puente
+de `postMessage` y un renderizador son infraestructura de integración.
+
+Mantenerla cerrada no protege nada y sí cuesta: nadie audita lo que no puede
+leer, y en un paquete cuya única función es no dejar pasar mensajes de origen
+ajeno, que lo miren desde afuera es parte del producto.
+
+Es lo mismo que hacen Shopify con su App Bridge y Stripe con `stripe-js`. La
+capa de integración abierta empuja la adopción de lo que sí se cobra.
