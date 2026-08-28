@@ -1,0 +1,101 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Cosmos: el panel, del lado anfitrion</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font: 15px/1.5 system-ui, sans-serif;
+    margin: 0; display: grid; grid-template-columns: 1fr 380px; min-height: 100vh;
+  }
+  main { padding: 24px 28px; }
+  aside {
+    border-left: 1px solid rgba(128,128,128,.3); padding: 16px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  p.sub { margin: 0 0 20px; opacity: .7; font-size: 13px; }
+  iframe { width: 100%; height: 320px; border: 1px solid rgba(128,128,128,.35); border-radius: 8px; }
+  #registro {
+    font: 12px/1.45 ui-monospace, monospace; white-space: pre-wrap;
+    overflow-y: auto; flex: 1; margin: 0;
+  }
+  .env { color: #0a7; } .rec { color: #06c; } .mal { color: #c00; font-weight: 600; }
+  button { font: inherit; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+</style>
+
+<main>
+  <h1>Panel del comerciante</h1>
+  <p class="sub">
+    La app corre en el iframe de abajo, en otro origen. Todo lo que pide pasa por
+    el puente.
+  </p>
+  <iframe id="app" src="http://127.0.0.1:8091/index.html" sandbox="allow-scripts allow-same-origin"></iframe>
+  <p style="margin-top:16px">
+    <button id="empujar">Mandarle un evento a la app</button>
+    <button id="hostil">Simular un mensaje de origen ajeno</button>
+  </p>
+</main>
+
+<aside>
+  <strong style="font-size:13px">Lo que cruza el puente</strong>
+  <pre id="registro"></pre>
+</aside>
+
+<script type="module">
+  import { createHostBridge } from "./dist/index.js";
+
+  const registro = document.getElementById("registro");
+  const anotar = (clase, texto) => {
+    const l = document.createElement("span");
+    l.className = clase;
+    l.textContent = texto + "\n";
+    registro.appendChild(l);
+    registro.scrollTop = registro.scrollHeight;
+  };
+
+  const frame = document.getElementById("app");
+
+  // En produccion esto sale de App.appUrl, validado al publicar la app.
+  const ORIGEN_APP = new URL(frame.src, location.href).origin;
+
+  const host = createHostBridge({
+    clientId: "demo-app",
+    allowedOrigins: ORIGEN_APP,
+    frame,
+    onRejected: (razon) => anotar("mal", `rechazado: ${razon}`),
+  });
+
+  // Lo que el anfitrion sabe contestar. En produccion cada uno de estos
+  // chequearia el alcance concedido en AppInstall.scopes antes de responder.
+  host.respond("auth:sessionToken", () => {
+    anotar("rec", "la app pidio auth:sessionToken");
+    return { token: "tok_demo_" + Math.random().toString(36).slice(2, 10) };
+  });
+
+  host.respond("org:info", () => {
+    anotar("rec", "la app pidio org:info");
+    return { id: "org_demo", nombre: "Tienda de prueba", moneda: "ARS" };
+  });
+
+  host.subscribe("app:log", (payload) => {
+    anotar("rec", `la app dice: ${payload}`);
+  });
+
+  document.getElementById("empujar").onclick = () => {
+    anotar("env", "el panel manda payment:created");
+    host.send("payment:created", { id: "pi_" + Date.now(), monto: 1500 });
+  };
+
+  // El ataque que el puente tiene que frenar: un mensaje bien formado pero
+  // desde otro origen. Se manda a la ventana de la app directamente.
+  document.getElementById("hostil").onclick = () => {
+    anotar("env", "mandando un mensaje con clientId de otra app...");
+    frame.contentWindow.postMessage(
+      { __cosmos_bridge__: true, clientId: "otra-app", type: "auth:sessionToken",
+        payload: { token: "tok_ROBADO" }, correlationId: "x" },
+      "*",
+    );
+  };
+
+  anotar("env", `puente listo. unico origen aceptado: ${ORIGEN_APP}`);
+</script>

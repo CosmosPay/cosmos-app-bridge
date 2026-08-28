@@ -1,0 +1,75 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>La app, del lado de adentro</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 14px/1.5 system-ui, sans-serif; margin: 0; padding: 16px; }
+  h2 { font-size: 15px; margin: 0 0 10px; }
+  button { font: inherit; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 12px 0; }
+  dt { opacity: .65; } dd { margin: 0; font-family: ui-monospace, monospace; }
+  .aviso { padding: 8px 10px; border-radius: 6px; font-size: 13px; margin-top: 12px; }
+  .ok  { background: rgba(0,170,120,.14); }
+  .mal { background: rgba(200,0,0,.14); }
+</style>
+
+<h2>App de ejemplo</h2>
+<p style="margin:0;opacity:.7">
+  Corre en otro origen. No tiene acceso a la sesión del panel: todo lo pide.
+</p>
+
+<dl>
+  <dt>estado</dt><dd id="estado">arrancando...</dd>
+  <dt>tienda</dt><dd id="tienda">?</dd>
+  <dt>token</dt><dd id="token">?</dd>
+</dl>
+
+<button id="pedir">Pedir token de sesión</button>
+<button id="avisar">Avisarle algo al panel</button>
+
+<div id="aviso"></div>
+
+<script type="module">
+  import { createAppBridge } from "./dist/index.js";
+
+  const $ = (id) => document.getElementById(id);
+
+  // El origen del panel. En produccion lo inyecta el anfitrion al cargar el
+  // iframe; aca se deduce porque el ejemplo se sirve todo junto.
+  const ORIGEN_PANEL = "http://127.0.0.1:8090";
+
+  const bridge = createAppBridge({
+    clientId: "demo-app",
+    allowedOrigins: ORIGEN_PANEL,
+    onRejected: (razon) => {
+      // Esto es lo que se ve cuando alguien intenta inyectar un mensaje.
+      $("aviso").className = "aviso mal";
+      $("aviso").textContent =
+        `Se descartó un mensaje: ${razon}. La app no lo vio.`;
+    },
+  });
+
+  await bridge.ready();
+  $("estado").textContent = "conectado";
+
+  const org = await bridge.request("org:info");
+  $("tienda").textContent = `${org.nombre} (${org.moneda})`;
+
+  $("pedir").onclick = async () => {
+    const { token } = await bridge.request("auth:sessionToken");
+    $("token").textContent = token;
+    $("aviso").className = "aviso ok";
+    $("aviso").textContent = "Token recibido del panel, por el puente.";
+  };
+
+  $("avisar").onclick = () => {
+    bridge.send("app:log", "hola desde adentro del iframe");
+  };
+
+  // Lo que el panel empuja sin que la app lo pida.
+  bridge.subscribe("payment:created", (pago) => {
+    $("aviso").className = "aviso ok";
+    $("aviso").textContent =
+      `El panel avisó de un pago nuevo: ${pago.id}, $${pago.monto}`;
+  });
+</script>

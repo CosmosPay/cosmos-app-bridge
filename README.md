@@ -144,3 +144,22 @@ ajeno, que lo miren desde afuera es parte del producto.
 
 Es lo mismo que hacen Shopify con su App Bridge y Stripe con `stripe-js`. La
 capa de integración abierta empuja la adopción de lo que sí se cobra.
+
+## El ejemplo
+
+```bash
+npm run ejemplo     # panel en :8090, la app en :8091
+```
+
+Dos puertos y no uno a propósito: para un navegador son **dos orígenes
+distintos**, que es lo que hace que la lista blanca signifique algo. Servido
+todo junto, la comprobación de origen se cumple sola y el ejemplo no demuestra
+nada.
+
+El panel muestra a la derecha todo lo que cruza el puente, y tiene un botón que
+manda un mensaje bien formado pero con el `clientId` de otra app, para ver el
+rechazo.
+
+Eso mismo corre como test (`test/e2e.test.mjs`) contra Chromium. Se saltea solo
+si playwright no está instalado, así que `npm test` sigue andando en una máquina
+sin navegador.
