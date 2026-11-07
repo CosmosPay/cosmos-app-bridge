@@ -1,3 +1,7 @@
+<p align="center">
+  <a href="https://cosmospay.lat"><img src=".github/assets/banner.png" width="100%" alt="Cosmos App bridge: a postMessage bridge with origin checks in both directions."></a>
+</p>
+
 # @cosmosapp/app_bridge
 
 El puente entre una Cosmos App y la plataforma que la embebe.
